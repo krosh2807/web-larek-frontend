@@ -1,137 +1,187 @@
+# Архитектура проекта
 
-## Архитектура проекта
+В проекте используется паттерн **MVC (Model-View-Controller)**.  
+Связь между слоями реализована через событийный брокер `EventEmitter`, который инкапсулирует подписку и генерацию событий. Это позволяет модулям взаимодействовать только через события, не зная напрямую друг о друге.
 
-В проекте используется паттерн MVC (Model-View-Controller). Связь между слоями реализована через событийный брокер EventEmitter, 
-который инкапсулирует подписку и генерацию событий.Это позволяет модулям не знать напрямую о существовании друг друга и взаимодействовать 
-только через события.
+## EventEmitter
 
-Как работает EventEmitter
-События используются как для:
-получения данных от пользователя (например, клик, ввод, отправка формы),
-так и для передачи обновлений от контроллера в интерфейс (например, обновление корзины, открытие/закрытие модалок и т.д.).
+События используются для:
+- получения данных от пользователя (клик, ввод текста, отправка формы);
+- передачи данных в интерфейс (обновление корзины, открытие/закрытие модальных окон, переход между экранами).
 
-### Model
-#### Product
+Пример использования событий:
+button.addEventListener('click', () => eventEmitter.emit('basket:add', productId));
+eventEmitter.on('basket:add', (productId) => { /* обработка добавления товара */ });
+
+# Model
+## Product
+
 Представляет товар.
 
-- **Атрибуты:**
-  - `id` — уникальный идентификатор
-  - `title` — название
-  - `description` — описание
-  - `price` — цена
-  - `imageUrl` — URL изображения
+- Атрибуты:
+  - `id: number`
+  - `title: string`
+  - `description: string`
+  - `price: number`
+  - `imageUrl: string`
 
-#### Order
-Представляет заказ пользователя.
+## Cart
+Представляет корзину.
 
-- **Атрибуты:**
-  - `id` — уникальный идентификатор заказа
-  - `userId` — идентификатор пользователя
-  - `products` — массив продуктов
-  - `totalPrice` — итоговая стоимость
+- Атрибуты:
+  - `items: Product[]`
 
-#### Cart
-(реализуется как отдельный класс в проекте)
-
-- **Атрибуты:**
-  - `items` — список товаров в корзине
-- **Методы:**
+- Методы:
   - `add(product: Product)` — добавить товар
   - `remove(productId: number)` — удалить товар
   - `clear()` — очистить корзину
-  - `getTotal()` — получить сумму заказа
-  - `getItems()` — получить список товаров
+  - `getTotal(): number` — получить итоговую сумму
+  - `getItems(): Product[]` — получить список товаров
 
-### View
-#### ProductCard
-Компонент представления карточки товара.
+## Order
+Модель заказа, содержащая данные пользователя.
 
-- **Атрибуты:**
+- Атрибуты:
+  - `name: string`
+  - `email: string`
+  - `phone: string`
+  - `address: string`
+  - `paymentMethod: string`
+
+- Методы:
+  - `setField(field: string, value: string)` — записать значение в поле
+  - `validate(): boolean` — валидация всех полей
+
+# View
+## ProductCardView
+
+Компонент отображения карточки товара.
+
+- Атрибуты:
   - DOM-элемент карточки
-- **Методы:**
+
+- Методы:
   - `render(product: Product)` — отрисовать карточку
-  - `bindAddToCart(callback)` — подписка на событие добавления в корзину
+  - привязка событий к кнопке "Добавить в корзину" через `addEventListener` и отправка событий через `EventEmitter`
 
-#### CartView
-Представляет визуальное отображение корзины.
+## CartView
+Компонент отображения корзины.
 
-- **Методы:**
-  - `render(cart: Cart)` — отрисовка содержимого
-  - `bindRemove(callback)` — подписка на удаление товаров
-  - `bindCheckout(callback)` — подписка на оформление заказа
+- Атрибуты:
+  - контейнер для списка товаров
+  - элемент отображения итоговой суммы
+  - кнопки для удаления товаров и оформления заказа
 
-#### ModalView
-Представляет универсальное модальное окно.
+- Методы:
+  - `renderCartItems(items: HTMLElement)` — отрисовать список товаров
+  - `renderTotal(total: number)` — обновить итоговую сумму
+  - обработка событий удаления товаров и оформления заказа через `EventEmitter`
 
-- **Методы:**
-  - `open(content: HTMLElement)` — показать модалку
+## ModalView
+Универсальное модальное окно.
+
+- Атрибуты:
+  - контейнер модалки
+  - кнопка закрытия
+
+- Методы:
+  - `open(content: HTMLElement)` — открыть модалку с переданным контентом
   - `close()` — закрыть модалку
-  - `bindClose(callback)` — подписка на событие закрытия
+  - привязка событий закрытия через `EventEmitter`
 
-#### OrderFormView
-Отображает форму оформления заказа.
+## OrderDetailsView
+Экран ввода данных пользователя при оформлении заказа.
 
-- **Методы:**
-  - `bindSubmit(callback)` — подписка на отправку формы
-  - `renderError(message)` — показать ошибку
-  - `renderSuccess()` — показать успешное оформление
+- Атрибуты:
+  - инпуты: имя, email, телефон, адрес, метод оплаты
 
-### Controller
-#### ShopController
-Координирует взаимодействие между Model и View.
+- Методы:
+  - `render()` — отрисовать форму
+  - обработка событий ввода и отправки формы через `EventEmitter`
+  - отображение ошибок валидации
 
-- **Атрибуты:**
-  - `productModel`, `cartModel`, `orderModel`
-  - ссылки на view-компоненты
-- **Методы:**
-  - `init()` — инициализация, загрузка данных
-  - `handleAddToCart(productId)` — добавление в корзину
-  - `handleRemoveFromCart(productId)` — удаление из корзины
-  - `handleFormSubmit(data)` — оформление заказа
+## OrderSuccessView
+Экран успешного оформления заказа.
 
-### Service
-#### Api
+- Атрибуты:
+  - сообщение об успешном заказе
+  - кнопка возврата на главную страницу
+
+- Методы:
+  - `render()` — отрисовать сообщение об успехе
+  - обработка клика на кнопку возврата через `EventEmitter`
+
+# Controller
+## ShopController
+
+Координирует работу моделей и представлений.
+
+- Атрибуты:
+  - `productModel: Product[]`
+  - `cartModel: Cart`
+  - `orderModel: Order`
+  - ссылки на компоненты представления: `ProductCardView`, `CartView`, `ModalView`, `OrderDetailsView`, `OrderSuccessView`
+
+- Методы:
+  - `init()` — инициализация приложения
+  - `handleAddToCart(productId)` — добавить товар в корзину
+  - `handleRemoveFromCart(productId)` — удалить товар из корзины
+  - `handleCheckout()` — начать процесс оформления заказа
+  - `handleFormSubmit(formData)` — обработать отправку данных заказа
+  - `handleOrderSuccess()` — показать экран успешного заказа
+
+# Service
+## Api
+
 Работа с REST API.
-- **Атрибуты:**
-  - `baseUrl`, `options`
-- **Методы:**
-  - `get(uri: string)` — GET-запрос
-  - `post(uri: string, data: object)` — POST/PUT/DELETE-запрос
-  - `handleResponse(response: Response)` — обработка ответа
 
-#### EventEmitter
-Обеспечивает событийное взаимодействие между слоями.
+- Атрибуты:
+  - `baseUrl: string`
+  - `options: object`
 
-- **Методы:**
-  - `on(eventName, callback)` — подписка
-  - `emit(eventName, data)` — генерация
-  - `trigger(eventName, context)` — триггер коллбека
-  - `onAll(callback)` — подписка на все события
-  - `off(eventName, callback)` — отписка
+- Методы:
+  - `get(uri: string): Promise<any>` — отправить GET-запрос
+  - `post(uri: string, data: object): Promise<any>` — отправить POST-запрос
+  - `handleResponse(response: Response): Promise<any>` — обработать ответ сервера
 
-**Используется для передачи событий между слоями**, например:
-- клик на кнопку "добавить в корзину"
-- клик на кнопку "оформить заказ"
-- отправка формы заказа
-- закрытие модального окна
+## EventEmitter
+Сервис событийного взаимодействия.
 
-### Утилиты (utils.ts)
-- `ensureElement`, `ensureAllElements` — безопасная работа с DOM
-- `cloneTemplate` — клонирование DOM-шаблонов
-- `getObjectProperties` — introspection
-- `setElementData`, `getElementData` — работа с dataset
-- `createElement` — генерация DOM-элементов
-- `pascalToKebab`, `isPlainObject`, `isBoolean`, `isEmpty` — базовые проверки
+- Методы:
+  - `on(eventName: string, callback: Function)` — подписаться на событие
+  - `emit(eventName: string, data?: any)` — вызвать событие
+  - `off(eventName: string, callback: Function)` — отписаться от события
+  - `onAll(callback: Function)` — подписаться на все события
 
-## Важные файлы
-- `components/api.ts` — класс `Api` для работы с REST API.
-- `components/events.ts` — класс `EventEmitter` для событийной архитектуры.
-- `types/model.ts` — типы данных: `Product`, `Order`.
-- `utils/utils.ts` — вспомогательные функции для работы с DOM.
-- `utils/constants.ts` — константы (`API_URL`, `CDN_URL`).
+Типичные события:
+- Клик на кнопку "Добавить в корзину"
+- Клик на кнопку "Оформить заказ"
+- Отправка формы заказа
+- Открытие/закрытие модального окна
+- Переход между экранами оформления заказа
 
-## Установка и запусл
+# Утилиты
 
---bash
+Файл `utils.ts`:
+
+- `ensureElement` — безопасное получение одного элемента
+- `ensureAllElements` — безопасное получение нескольких элементов
+- `cloneTemplate` — клонирование DOM-шаблона
+- `createElement` — создание нового DOM-элемента
+- `setElementData`, `getElementData` — работа с атрибутами `data-*`
+- `pascalToKebab`, `isPlainObject`, `isBoolean`, `isEmpty` — базовые утилиты для проверки типов
+
+# Важные файлы проекта
+
+- `components/api.ts` — класс для работы с API
+- `components/events.ts` — реализация EventEmitter
+- `types/model.ts` — описания типов `Product`, `Order`
+- `utils/utils.ts` — вспомогательные функции для работы с DOM и проверки данных
+- `utils/constants.ts` — константы проекта (`API_URL`, `CDN_URL`)
+
+# Установка и запуск
+
 npm install
 npm run dev
+
+
