@@ -1,29 +1,60 @@
-import { User, Product, Order } from "./model";
-
-// Тип ответа от API для списка сущностей
-export type ApiListResponse<T> = {
-    total: number;
-    items: T[];
+// Тип категории товара
+export type CatalogItemStatus = {
+	category: 'софт-скил' | 'хард-скил' | 'другое' | 'кнопка' | 'дополнительное';
 };
 
-// HTTP-методы для пост-запросов
-export type ApiPostMethods = 'POST' | 'PUT' | 'DELETE';
-
-// Типы событий
-export type EventName = string | RegExp;
-export type Subscriber = (data: any) => void;
-export interface EmitterEvent {
-    eventName: string;
-    data: unknown;
+// Интерфейс, описывающий карточку товара
+export interface IProduct {
+	id: string; 
+	description: string; 
+	image: string; 
+	title: string; 
+	category: string; 
+	price: number | null; 
 }
 
-// Интерфейс событийного брокера
-export interface IEvents {
-    on<T extends object>(event: EventName, callback: (data: T) => void): void;
-    emit<T extends object>(event: string, data?: T): void;
-    trigger<T extends object>(event: string, context?: Partial<T>): (data: T) => void;
+// Интерфейс для класса ContactsForm
+export interface IOrderForm {
+	email: string; 
+	phone: string; 
 }
 
-// Утилиты для работы с DOM
-export type SelectorElement<T> = T | string;
-export type SelectorCollection<T> = string | NodeListOf<Element> | T[];
+// Интерфейс для класса Order
+export interface IOrderContact {
+	payment: string; 
+	address: string; 
+}
+
+// Интерфейс IOrder, расширяющий IOrderForm и IOrderContact
+export interface IOrder extends IOrderForm, IOrderContact {
+	total: number; 
+	items: string[]; 
+}
+
+// Интерфейс для создание заказа
+export interface IOrderAnswer {
+	total: number; 
+}
+
+// Интерфейс для класса AppState
+export interface IAppState {
+	catalog: IProduct[]; 
+	basket: string[]; 
+	order: IOrder; 
+}
+
+// Интерфейс для работы с API магазина
+export interface IStoreApi {
+	getProductList: () => Promise<IProduct[]>; 
+	orderProduct: (value: IOrder) => Promise<IOrderAnswer>; 
+}
+
+// Интерфейс для класса Page
+export interface IPage {
+	counter: HTMLElement; 
+	catalog: HTMLElement; 
+	basket: HTMLElement; 
+}
+
+//Тип **FormErrors**, который используется для представления ошибок формы
+export type FormErrors = Partial<Record<keyof IOrder, string>>;

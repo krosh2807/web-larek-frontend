@@ -1,17 +1,22 @@
+// Преобразует строку из PascalCase в kebab-case
 export function pascalToKebab(value: string): string {
     return value.replace(/([a-z0–9])([A-Z])/g, "$1-$2").toLowerCase();
 }
 
+// Проверяет, является ли переданный аргумент CSS-селектором (строкой длиной больше 1)
 export function isSelector(x: any): x is string {
     return (typeof x === "string") && x.length > 1;
 }
 
+// Проверяет, является ли значение пустым (null или undefined)
 export function isEmpty(value: any): boolean {
     return value === null || value === undefined;
 }
 
+// Универсальный тип для набора DOM-элементов
 export type SelectorCollection<T> = string | NodeListOf<Element> | T[];
 
+// Обеспечивает получение всех элементов по селектору, NodeList или массиву
 export function ensureAllElements<T extends HTMLElement>(selectorElement: SelectorCollection<T>, context: HTMLElement = document as unknown as HTMLElement): T[] {
     if (isSelector(selectorElement)) {
         return Array.from(context.querySelectorAll(selectorElement)) as T[];
@@ -25,8 +30,10 @@ export function ensureAllElements<T extends HTMLElement>(selectorElement: Select
     throw new Error(`Unknown selector element`);
 }
 
+// Тип: одиночный DOM-элемент или селектор
 export type SelectorElement<T> = T | string;
 
+// Получает один элемент по селектору или возвращает переданный элемент
 export function ensureElement<T extends HTMLElement>(selectorElement: SelectorElement<T>, context?: HTMLElement): T {
     if (isSelector(selectorElement)) {
         const elements = ensureAllElements<T>(selectorElement, context);
@@ -44,11 +51,13 @@ export function ensureElement<T extends HTMLElement>(selectorElement: SelectorEl
     throw new Error('Unknown selector element');
 }
 
+// Клонирует содержимое HTML-шаблона
 export function cloneTemplate<T extends HTMLElement>(query: string | HTMLTemplateElement): T {
     const template = ensureElement(query) as HTMLTemplateElement;
     return template.content.firstElementChild.cloneNode(true) as T;
 }
 
+// Генерирует BEM-имя класса и селектор
 export function bem(block: string, element?: string, modifier?: string): { name: string, class: string } {
     let name = block;
     if (element) name += `__${element}`;
@@ -59,6 +68,7 @@ export function bem(block: string, element?: string, modifier?: string): { name:
     };
 }
 
+// Возвращает список имён методов/свойств объекта, с опциональной фильтрацией
 export function getObjectProperties(obj: object, filter?: (name: string, prop: PropertyDescriptor) => boolean): string[] {
     return Object.entries(
         Object.getOwnPropertyDescriptors(
@@ -69,18 +79,14 @@ export function getObjectProperties(obj: object, filter?: (name: string, prop: P
         .map(([name, prop]) => name);
 }
 
-/**
- * Устанавливает dataset атрибуты элемента
- */
+//Устанавливает dataset-атрибуты элемента по объекту
 export function setElementData<T extends Record<string, unknown> | object>(el: HTMLElement, data: T) {
     for (const key in data) {
         el.dataset[key] = String(data[key]);
     }
 }
 
-/**
- * Получает типизированные данные из dataset атрибутов элемента
- */
+//Извлекает данные из dataset-атрибутов элемента, с приведением типов по схеме
 export function getElementData<T extends Record<string, unknown>>(el: HTMLElement, scheme: Record<string, Function>): T {
     const data: Partial<T> = {};
     for (const key in el.dataset) {
@@ -89,24 +95,19 @@ export function getElementData<T extends Record<string, unknown>>(el: HTMLElemen
     return data as T;
 }
 
-/**
- * Проверка на простой объект
- */
+//Проверяет, является ли объект "простым" (не экземпляром класса)
 export function isPlainObject(obj: unknown): obj is object {
     const prototype = Object.getPrototypeOf(obj);
     return  prototype === Object.getPrototypeOf({}) ||
         prototype === null;
 }
 
+// Проверяет, является ли значение boolean
 export function isBoolean(v: unknown): v is boolean {
     return typeof v === 'boolean';
 }
 
-/**
- * Фабрика DOM-элементов в простейшей реализации
- * здесь не учтено много факторов
- * в интернет можно найти более полные реализации
- */
+//Упрощённая фабрика создания DOM-элементов с атрибутами и детьми
 export function createElement<
     T extends HTMLElement
     >(
@@ -132,4 +133,9 @@ export function createElement<
         }
     }
     return element;
+}
+
+// Форматирует число, добавляя пробелы как разделители тысяч
+export function formatNumber(x: number, sep = ' ') {
+	return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, sep);
 }
