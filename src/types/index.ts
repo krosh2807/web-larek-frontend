@@ -34,6 +34,7 @@ export interface IOrder extends IOrderForm, IOrderContact {
 // Интерфейс для создание заказа
 export interface IOrderAnswer {
 	total: number; 
+	success: boolean;
 }
 
 // Интерфейс для класса AppState

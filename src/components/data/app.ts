@@ -86,6 +86,17 @@ export class AppState extends Model<IAppState> {
 		return Object.keys(errors).length === 0;
 	}
 
+	getOrder(): IOrder {
+		return {
+			address: this.order.address,
+			payment: this.order.payment,
+			email: this.order.email,
+			phone: this.order.phone,
+			total: this.getTotal(),
+			items: this.basket.map(product => product.id)
+		};
+	}
+
 	get isEmpty(): boolean {
 		return this.basket.length === 0;
 	}

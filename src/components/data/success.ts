@@ -39,6 +39,11 @@ export class PurchaseConfirmation extends UiComponent<IPurchaseResult> {
             this.closeButton.addEventListener('click', handler);
         }
     }
+        draw(data: IPurchaseResult): HTMLElement {
+            this.transactionAmount = data.amount;
+            return super.draw(data);
+        }
+
     //Отображение списания 
     set transactionAmount(value: number) {
         this.updateTextContent(
